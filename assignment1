@@ -8,7 +8,7 @@ library("knitr")
 library("lubridate")
 library("maps")
 library("ggplot2")
-library("stringr")
+library(stringr)
 ‪#‎Question‬ 1
 df = read_csv("https://raw.githubusercontent.com/…/col…/master/Artworks.csv")
 #Question 2
