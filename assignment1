@@ -1,4 +1,5 @@
-‪#‎Loading‬ potentiel packages
+#Loading potentiel packages
+
 library("readr")
 library("countrycode")
 library("mapdata")
@@ -9,66 +10,93 @@ library("lubridate")
 library("maps")
 library("ggplot2")
 library(stringr)
-‪#‎Question‬ 1
-df = read_csv("https://raw.githubusercontent.com/…/col…/master/Artworks.csv")
+
+#Question 1
+df0 = read_csv("https://raw.githubusercontent.com/MuseumofModernArt/collection/master/Artworks.csv")
+df = df0 %>%
+  filter(Classification == 'Painting')
+
 #Question 2
-‪#‎sorting‬ by date and fixing cumulative variable
+#sorting by date and fixing cumulative variable
 df= df[order(df$DateAcquired),]
 df$antal=1
-df$cum=cumsum(df$antal)
-p= ggplot(data =df, aes(x=DateAcquired, y=cum, colour="red"))
+
+df.plot = df %>%
+  group_by(DateAcquired) %>%
+  summarise(antal = sum(antal)) %>%
+  data.frame
+df.plot$cum=cumsum(df.plot$antal)
+
+p= ggplot(data =df.plot, aes(x=DateAcquired, y=cum, colour="red"))
 p= p + geom_freqpoly(binwidth=100, fill="red", stat="identity") + labs(x = "Time", y = "Art acquired", title = "Number of art acquired over time (cumulative)")
 plot(p)
-‪#‎removing‬ missing values on its own
-‪#‎freqpoly‬ is an appropriate one. its good at showing data over time
+
+#removing missing values on its own
+
+#freqpoly is an appropriate one. its good at showing data over time
+
 #Question 3
 #sorting data
 df= df[order(df$CuratorApproved, df$DateAcquired),]
-‪#‎preparing‬ two data frames. one with CuratorApproved=N and one with CuratorApproved=Y and calculating cumulatives
+
+#preparing two data frames. one with CuratorApproved=N and one with CuratorApproved=Y and calculating cumulatives
+#Curatorapproved = N
 df.agg0 = df %>%
-filter(CuratorApproved == 'N') %>%
-select(CuratorApproved, DateAcquired, antal) %>%
-data.frame()
-df.agg0$cumYN=cumsum(df.agg0$antal)
+  filter(CuratorApproved == 'N') %>%
+  select(CuratorApproved, DateAcquired, antal) %>%
+  data.frame()
+
+df.plot1 = df.agg0 %>%
+  group_by(DateAcquired, CuratorApproved) %>%
+  summarise(antal = sum(antal)) %>%
+  data.frame
+df.plot1$cum=cumsum(df.plot1$antal)
+
+#curatorapproved = Y
 df.agg00 = df %>%
-filter(CuratorApproved == 'Y') %>%
-select(CuratorApproved, DateAcquired, antal) %>%
-data.frame()
-df.agg00$cumYN=cumsum(df.agg00$antal)
-‪#‎merging‬ the two data frames and plotting
-df.agg.merge= rbind(df.agg0, df.agg00)
-p= ggplot(df.agg.merge, aes(x=DateAcquired, y=cumYN, colour=CuratorApproved))
+  filter(CuratorApproved == 'Y') %>%
+  select(CuratorApproved, DateAcquired, antal) %>%
+  data.frame()
+
+df.plot2 = df.agg00 %>%
+  group_by(DateAcquired, CuratorApproved) %>%
+  summarise(antal = sum(antal)) %>%
+  data.frame
+df.plot2$cum=cumsum(df.plot2$antal)
+
+#merging the two data frames and plotting
+
+df.agg.merge= rbind(df.plot1, df.plot2)
+  
+p= ggplot(df.agg.merge, aes(x=DateAcquired, y=cum, colour=CuratorApproved))
 p= p + geom_freqpoly(binwidth=100, stat="identity") + labs(x = "Time", y = "Art acquired", title = "Number of art acquired over time (cumulative)")
 plot(p)
+
 #Question 4
-‪#‎DF‬ grouped by DEPARTMENT??? 
+#DF grouped by DEPARTMENT??? 
 #Preparing data frame..
+
+
 df.agg = df %>%
-group_by(Department) %>%
-summarise(antal = sum(antal)) %>%
-data.frame
+  group_by(Department) %>%
+  summarise(antal = sum(antal)) %>%
+  data.frame
+
 #Question 5
-‪#‎PLotting‬
+#PLotting
 p= ggplot(df.agg, aes(x=Department, y=antal))
 p= p + geom_histogram(binwidth=100, stat="identity") + labs(x = "Department", y = "Art acquired", title = "Number of art acquired by department")
 plot(p)
+
 #Question 6
-‪#‎making‬ a data frame with number of art from each artist and removing missings by the filter condition
+#making a data frame with number of art from each artist and removing missings by the filter condition
 df.agg2 = df %>%
-group_by(Artist) %>%
-summarise(antal = sum(antal)) %>%
-filter(Artist>0) %>%
-data.frame
+  group_by(Artist) %>%
+  summarise(antal = sum(antal)) %>%
+  filter(Artist>0) %>%
+  data.frame
 #sorting by antal to see who has the most paintings..
+
 df.agg2= df.agg2[order(df.agg2$antal, decreasing = TRUE),]
-‪#‎printing‬ top 10
+#printing top 10
 head(df.agg2,10)
-#Question 7
-map = map_data("world")
-map$iso2c = countrycode(map$region, origin = "country.name", destination = "iso2c")
-?countrycode
-#Question 8
-df3$section=str_extract(df$link, ".dk/[a-z]*")
-df3$section=gsub(".dk/","", df$section)
-df$size=str_extract(df$Dimensions, "([a-z]+)")
-df3$section=gsub(".dk/","", df$section)
