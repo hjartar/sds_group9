@@ -113,3 +113,56 @@ df.agg2 = df %>%
 df.agg2= df.agg2[order(df.agg2$antal, decreasing = TRUE),]
 #printing top 10
 head(df.agg2,10)
+
+
+#Question 7 - The variable ArtistBio lists the birth place of each painter. Use this information to create a world map where each country is colored according to the stock of paintings in MOMA’s collection.
+#Extracting artist demonym from ArtistBio
+df$demonym=gsub("\\(", "", df$ArtistBio)
+df$demonym=gsub(",", "", df$demonym)
+df$demonym=gsub(")", "", df$demonym)
+df$demonym=str_extract(df$demonym, "[A-z]*")
+df$demonym = gsub("Argentine","Argentinean",df$demonym)
+df$demonym = gsub("Icelandic","Icelander",df$demonym)
+df1 = df %>%
+  group_by(demonym) %>%
+  summarise(n()) %>%
+  data.frame
+summary(dfd)
+
+
+#However, some artist were born in another country, which requires more extraction and some clean-up:
+df$birth = str_extract(df$ArtistBio, "born [A-z]*\\s[A-z]*")
+df$birth = gsub("born ","",df$birth)
+df$birth = gsub("in ","",df$birth)
+df$birth = gsub("[Tt]he ","",df$birth)
+df$birth = gsub("Belorussia","Belarus",df$birth)
+df$birth = gsub("Beirut","Lebanon",df$birth)
+df2=df2[complete.cases(df2),]
+names(df)[names(df)=="birth"] <- "name"
+df2 = df %>%
+  group_by(name) %>%
+  summarise(n()) %>%
+  data.frame
+df2=df2[complete.cases(df2),]
+
+#An issue is that we both have countries as names and denonyms (ARBEJDER PÅ DET, HPH)
+#Using the a dataset on countries from mledoze, we match denonyms and birthpplace, respectively, with the ISO3 code. 
+dfd = read.csv("https://raw.githubusercontent.com/mledoze/countries/master/dist/countries.csv",sep = ";")
+dfd$name=word(dfd$name, 1, sep = fixed(","))
+dfa=select(dfd,name,demonym)
+dfx=right_join(dfa,df1) 
+dfaa=select(dfd,name,cca3)
+dfx=right_join(dfaa,dfx) 
+
+
+library(rworldmap)
+sPDF <- joinCountryData2Map( dfx
+                             ,joinCode = "ISO3"
+                             ,nameJoinColumn = "cca3")
+mapDevice()
+mapCountryData(sPDF,
+               nameColumnToPlot='n..',  
+               colourPalette =c("lightblue1","blue"),
+               missingCountryCol="gray95",
+               catMethod = "logFixedWidth",
+               mapTitle="P")
