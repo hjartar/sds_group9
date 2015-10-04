@@ -11,10 +11,23 @@ library("maps")
 library("ggplot2")
 library(stringr)
 
-#Question 1
+#Question 1 - Create a new dataframe of the stock of paintings at MOMA for each month in the year.
+#Load raw data and filter paintings.
 df0 = read_csv("https://raw.githubusercontent.com/MuseumofModernArt/collection/master/Artworks.csv")
 df = df0 %>%
   filter(Classification == 'Painting')
+#Create month variable.
+df= df[order(df$DateAcquired),]
+df= na.omit(df)
+df$MonthAcquired = paste(year(df$DateAcquired), str_pad(month(df$DateAcquired), 2, pad = "0"),sep = "")
+#Create dataframe with stock of paintings for each month. 
+by_MonthAcquired <- group_by(df, MonthAcquired) 
+stock <- df %>%
+  group_by(MonthAcquired) %>%
+  summarise(NewPaintings = n()) %>%
+  data.frame
+stock$stockofpaintings=cumsum(stock$NewPaintings)
+stockbymonth=select(stock,MonthAcquired,stockofpaintings)
 
 #Question 2
 #sorting by date and fixing cumulative variable
