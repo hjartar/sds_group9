@@ -9,7 +9,8 @@ library("knitr")
 library("lubridate")
 library("maps")
 library("ggplot2")
-library(stringr)
+library("stringr")
+library("reshape2")
 
 #Question 1 - Create a new dataframe of the stock of paintings at MOMA for each month in the year.
 #Load raw data and filter paintings.
@@ -80,7 +81,7 @@ df.plot2$cum=cumsum(df.plot2$antal)
 #merging the two data frames and plotting
 
 df.agg.merge= rbind(df.plot1, df.plot2)
-  
+
 p= ggplot(df.agg.merge, aes(x=DateAcquired, y=cum, colour=CuratorApproved))
 p= p + geom_freqpoly(binwidth=100, stat="identity") + labs(x = "Time", y = "Art acquired", title = "Number of art acquired over time (cumulative)")
 plot(p)
@@ -219,19 +220,53 @@ dfmomamap$region = gsub("United Kingdom","UK",dfmomamap$region)
 worldmoma=left_join(world,dfmomamap)
 
 worldmoma$brk <- cut(worldmoma$n.., 
-                      breaks=c(0,1,10,100,500,1000), 
-                      labels=c('1'
-                               ,'2-10'
-                               ,'11-100'
-                               ,'101-500'
-                               ,'500+'),
-                      include.lowest=TRUE) # define appropriate (& nicely labeled) population breaks
+                     breaks=c(0,1,10,100,500,1000), 
+                     labels=c('1'
+                              ,'2-10'
+                              ,'11-100'
+                              ,'101-500'
+                              ,'500+'),
+                     include.lowest=TRUE) # define appropriate (& nicely labeled) population breaks
 
 p = ggplot(worldmoma, aes(x = long, y = lat, group = group)) + 
   geom_polygon(aes(fill = brk),colour="black",size=0.2) 
 
 p<- p +scale_fill_brewer(palette = "BuPu",na.value="lightgrey")  
-  print(p)
-  
+print(p)
 
+#Q8
 
+#Only use art that is a painting
+df.painting <- df[which(df$Classification=='Painting'), ]
+
+#Steps to subtract the dimensions in cm from variable "Dimensions"
+#Get the parenthesis and what is inside
+df.painting$maal <- str_extract(df.painting$Dimensions, "\\([^()]+\\)")
+# Remove parenthesis
+df.painting$maal <- substring(df.painting$maal, 2, nchar(df.painting$maal)-1)
+
+#Remove unecessary info such as cm and x
+df.painting$maal = gsub("cm", "", df.painting$maal)
+df.painting$maal = gsub("x", "", df.painting$maal)
+
+#Split into two variables, height & length, by space
+df.painting2 <- colsplit(df.painting$maal," ",c("height","length"))
+#Merging into one dataframe
+df.painting <- data.frame(df.painting, df.painting2)
+
+#Converting characters to numeric
+df.painting$height = as.numeric(as.character(df.painting$height))
+df.painting$length = as.numeric(as.character(df.painting$length))
+#Calculating area in cm's
+df.painting$area = df.painting$height * df.painting$length 
+
+#Making new datasets sorted by area either ascending or descending
+df.biggest <- df.painting[order(-df.painting$area),] 
+df.smallest <- df.painting[order(df.painting$area),] 
+
+#Only include the 5 biggest or smallest
+df.biggest = df.biggest[1:5,]
+df.smallest = df.smallest[1:5,]
+
+#Combine into one data frame
+df.bigandsmal <- rbind(df.biggest, df.smallest)
