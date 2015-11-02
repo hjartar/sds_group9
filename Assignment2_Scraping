@@ -1,0 +1,49 @@
+#Scraping
+
+install.packages("rvest")
+install.packages("stringr")
+
+#Scraping location
+css.selector = ".location"
+link = "http://www.ipaidabribe.com/reports/paid#gsc.tab=0"
+
+df = read_html(link) %>% 
+  html_nodes(css = css.selector) %>% 
+  html_text()
+df
+
+library("stringr")
+df.clean = df %>% 
+str_replace_all(pattern = "\\n" , replacement = " ") %>%
+  str_trim()
+
+df.clean = df.clean %>% 
+  str_replace_all(pattern = "\\r" , replacement = " ") %>%
+  str_trim()
+
+df.clean = gsub(" ", "", df.clean, fixed = TRUE)
+
+df.clean
+
+#Scraping Headline
+css.selector = ".heading-3"
+link = "http://www.ipaidabribe.com/reports/paid#gsc.tab=0"
+
+df = read_html(link) %>% 
+  html_nodes(css = css.selector) %>% 
+  html_text()
+df
+
+df.clean2 = df %>% 
+str_replace_all(pattern = "\\n" , replacement = " ") %>%
+  str_trim()
+
+df.clean2 = df.clean2 %>% 
+  str_replace_all(pattern = "\\r" , replacement = " ") %>%
+  str_trim()
+
+df.clean2 = df.clean2 %>% 
+  str_replace_all(pattern = "....Read more" , replacement = "") %>%
+  str_trim()
+
+df.clean2
