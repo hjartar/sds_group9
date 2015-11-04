@@ -1,0 +1,60 @@
+library("rvest")
+library(stringr)
+library("dplyr")
+
+link = "http://www.ipaidabribe.com/reports/paid?page=00#gsc.tab=0"
+
+for(i in 0:99){
+  bribe.links=(paste("http://www.ipaidabribe.com/reports/paid?page=", 0:i, sep = ""))
+}
+head(bribe.links,20)
+
+#func
+scrape_bribe = function(link){
+  my.link = read_html(link, encoding = "UTF-8")
+  my.link.title = my.link %>% 
+    html_nodes(".heading-3 a") %>% 
+    html_text()
+  my.link.amount_text = my.link %>% 
+    html_nodes(".paid-amount span") %>% 
+    html_text()
+  my.link.name = my.link %>% 
+    html_nodes(".name a") %>% 
+    html_text()
+  my.link.transaction = my.link %>% 
+    html_nodes(".transaction a") %>% 
+    html_text()
+  my.link.views = my.link %>% 
+    html_nodes(".overview .views") %>% 
+    html_text()
+  my.link.city = my.link %>% 
+    html_nodes(".location") %>% 
+    html_text()
+  my.link.date = my.link %>% 
+    html_nodes(".date") %>% 
+    html_text()
+  return(cbind( my.link.title, my.link.amount_text, my.link.name, my.link.transaction, my.link.views, my.link.city, my.link.date ))
+}
+
+#Loop data to a list
+my.bribe.data = list() # initialize empty list
+for (i in bribe.links[1:100]){
+  print(paste("processing", i, sep = " "))
+  my.bribe.data[[i]] = scrape_bribe(i)
+  # waiting one second between hits
+  Sys.sleep(1)
+  cat(" done!\n")
+}
+
+#converting into a data frame
+library("plyr")
+df.bribe = ldply(my.bribe.data)
+
+
+#data cleaning
+df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0,0-9,9]+")
+df.bribe$my.link.views = str_extract(df.bribe$my.link.views,"[0,0-9,9]+")
+
+df.bribe=data.frame(page=df.bribe$.id, title=df.bribe$my.link.title, amount=df.bribe$my.link.amount_text, name=df.bribe$my.link.name, transaction=df.bribe$my.link.transaction, views=df.bribe$my.link.views, city=df.bribe$my.link.city, date=df.bribe$my.link.date)
+
+
