@@ -52,9 +52,77 @@ df.bribe = ldply(my.bribe.data)
 
 
 #data cleaning
-df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0,0-9,9]+")
+df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0-9]+")
 df.bribe$my.link.views = str_extract(df.bribe$my.link.views,"[0,0-9,9]+")
 
 df.bribe=data.frame(page=df.bribe$.id, title=df.bribe$my.link.title, amount=df.bribe$my.link.amount_text, name=df.bribe$my.link.name, transaction=df.bribe$my.link.transaction, views=df.bribe$my.link.views, city=df.bribe$my.link.city, date=df.bribe$my.link.date)
 
+library("dplyr")
+library("lubridate")
 
+df.bribe$amount = as.numeric(str_replace_all(df.bribe$amount, pattern = "," , replacement = ""))
+df.bribe$views = as.numeric(df.bribe$views)
+df.bribe$city1 = str_extract(df.bribe$city,"[A-z]*")
+
+df.bribe$reg = str_extract(df.bribe$city,", [A-z]+ [A-z]+")
+df.bribe$reg1 = str_extract(df.bribe$city,", [A-z]+")
+df.bribe$reg=gsub(",","", df.bribe$reg)
+df.bribe$reg1=gsub(",","", df.bribe$reg1)
+
+df.bribe$reg[is.na(df.bribe$reg)]=df.bribe$reg1[is.na(df.bribe$reg1)]
+
+class(df.bribe$amount)
+df.bribe$antal=1
+
+# stat data for cities
+df.bribe.reg = df.bribe %>%
+  group_by(reg) %>%
+  summarise(antal = sum(antal), median_amount = median(amount), mean_views = mean(views) ) %>%
+  arrange(desc(median_amount)) %>%
+  data.frame
+
+# stat data for name
+df.bribe.name = df.bribe %>%
+  group_by(name) %>%
+  summarise(antal = sum(antal), median_amount = median(amount), mean_views = mean(views) ) %>%
+  arrange(desc(median_amount), city) %>%
+  data.frame
+
+# stat data for transaction
+df.bribe.transaction = df.bribe %>%
+  group_by(transaction) %>%
+  summarise(antal = sum(antal), median_amount = median(amount), mean_views = mean(views) ) %>%
+  arrange(desc(median_amount), city) %>%
+  data.frame
+
+library("ggplot2")
+
+#plot 1
+p = ggplot(df.bribe.reg, aes(x = reorder(reg, median_amount), 
+                           y = median_amount))
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Median amount payed to bribe across regions", x="Regions", y="Median amount payed in RS.")
+plot(p)
+
+#plot 2
+p = ggplot(df.bribe.name, aes(x = reorder(name, median_amount), 
+                             y = median_amount))
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Median amount payed to bribe", x="Department", y="Median amount payed in RS.")
+plot(p)
+
+#plot 3
+p = ggplot(df.bribe.name, aes(x = reorder(name, antal), 
+                              y = antal))
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Amount of bribes", x="Department", y="Amount of bribes")
+plot(p)
+
+#plot 4
+p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, antal), 
+                              y = antal))
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Amount of bribes", x="Transaction", y="Amount of bribes")
+plot(p)
+
+#plot 4
+p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, median_amount), 
+                                     y = median_amount))
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Median amount payed to bribe", x="Transaction", y="Median amount of bribes in RS.")
+plot(p)
