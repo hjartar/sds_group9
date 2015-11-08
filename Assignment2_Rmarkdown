@@ -170,7 +170,7 @@ p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 3: Amount
 plot(p)
 ```
 
-Wondering if there is any correlation between the size of the bribes and the frequency we plot these together.
+Wondering if there is any correlation between the frequency of each transaction type we plot these together.
 ```{r}
 p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, antal), 
                                      y = antal))
