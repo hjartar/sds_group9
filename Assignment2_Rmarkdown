@@ -13,7 +13,6 @@ We start by initializing the relevant packages for scraping the webpage *www.ipa
 ```{r, message=FALSE}
 library("rvest")
 library(stringr)
-library("dplyr")
 ```
 
 We want the lates 1.000 observations and since the webpage is designed such that 10 observations are on each page, we need to scrape 100 pages. The first page looks like this:
