@@ -103,7 +103,9 @@ df.bribe$reg1 = str_extract(df.bribe$city,", [A-z]+")
 df.bribe$reg=gsub(",","", df.bribe$reg)
 df.bribe$reg1=gsub(",","", df.bribe$reg1)
 
-df.bribe$reg[is.na(df.bribe$reg)]=df.bribe$reg1[is.na(df.bribe$reg1)]
+df.bribe$reg2[is.na(df.bribe$reg)]=df.bribe$reg1[is.na(df.bribe$reg)]
+df.bribe$reg2[is.na(df.bribe$reg2)]=df.bribe$reg[is.na(df.bribe$reg2)]
+df.bribe$reg=df.bribe$reg2
 
 class(df.bribe$amount)
 df.bribe$antal=1
