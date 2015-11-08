@@ -4,6 +4,10 @@ author: "Mads Harslund, Lukas Hidan, Rasmus Holm & Hjörtur Hjartar"
 date: "7. nov. 2015"
 output: html_document
 ---
+By looking at the crowdsourced data, there are a number of issues that should be considered. We can get a snap-shot of the reported bribe,but more rigourous data collecting is needed in order to make sound statstical inference on the subject. 
+The data is extracted from the 1000 latest entries of data. In this data there are reported entires for the dates November 5-8th 2015. Another sample period might have given different results, as interactions with public authorities may be have difference frequencies a cross time, i.e. an end-of-month tax collection. This can also vary geographically. However, there may also be a lag in time from the incident of bribe to reporting it. 
+
+There is an altruistic incentive to frequently report bribes in order to combat wide-spread corruption in India. However, it is not possible to penalize false reporters. Civilians may report certain classes of incidents with a larger propensity than others. 
 
 We start by initializing the relevant packages for scraping the webpage *www.ipaidabribe.com* 
 ```{r, message=FALSE}
