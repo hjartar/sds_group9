@@ -33,7 +33,7 @@ We let R loop from 00 to 99 and define the variables of interest:
 
 The scraped data is first stored in a list and then converted to a dataframe using the plyr package.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 for(i in 0:99){
   bribe.links=(paste("http://www.ipaidabribe.com/reports/paid?page=", 0:i, sep = ""))
 }
@@ -83,7 +83,7 @@ df.bribe = ldply(my.bribe.data)
 
 We do some data cleaning to isolate the numeric part in the amount and view variables using *str_exstract*. 
 
-```{r}
+```{r, message=FALSE}
 df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0,0-9,9]+")
 df.bribe$my.link.views = str_extract(df.bribe$my.link.views,"[0,0-9,9]+")
 
@@ -98,7 +98,7 @@ df.bribe$views = as.numeric(df.bribe$views)
 
 More data cleaning is done when we extract the city and the region from the combined variable we got from scraping.
 
-```{r}
+```{r, message=FALSE}
 df.bribe$city1 = str_extract(df.bribe$city,"[A-z]*")
 
 df.bribe$reg = str_extract(df.bribe$city,", [A-z]+ [A-z]+")
@@ -116,7 +116,7 @@ df.bribe$antal=1
 
 We then do some data summarization with mean of amount and views on city, name and transaction.
 
-```{r}
+```{r, message=FALSE}
 # stat data for cities
 df.bribe.reg = df.bribe %>%
   group_by(reg) %>%
@@ -140,11 +140,11 @@ df.bribe.transaction = df.bribe %>%
 ```
 
 We use *ggplot2* package to do graphs. 
-```{r}
+```{r, message=FALSE}
 library("ggplot2")
 ```
 
-Our first graph shows the median amount paid in bribe across regions.
+Our first graph shows the median amount paid in bribe across regions. Some regions might have a higher reported bribe-amount which may come from either more corruption or more people who like to report in these specific areas.
 ```{r}
 p = ggplot(df.bribe.reg, aes(x = reorder(reg, median_amount), 
                              y = median_amount))
@@ -153,7 +153,7 @@ plot(p)
 ```
 
 
-The next graph shows the median amount paid in bribe for each department
+The next graph shows the median amount paid in bribe for each department. Again some departments might be associated with higher corruption levels.
 ```{r}
 #plot 2
 p = ggplot(df.bribe.name, aes(x = reorder(name, median_amount), 
@@ -170,7 +170,7 @@ p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 3: Amount
 plot(p)
 ```
 
-Wondering if there is any correlation between the size of the bribes and the frequency we plot these together:
+Wondering if there is any correlation between the size of the bribes and the frequency we plot these together.
 ```{r}
 p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, antal), 
                                      y = antal))
