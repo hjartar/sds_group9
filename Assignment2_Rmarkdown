@@ -93,6 +93,8 @@ library("dplyr")
 library("lubridate")
 
 df.bribe$amount = as.numeric(str_replace_all(df.bribe$amount, pattern = "," , replacement = ""))
+#filter out outliers
+df.bribe=filter(df.bribe,df.bribe$amount<3000000 ) 
 df.bribe$views = as.numeric(df.bribe$views)
 ```
 
