@@ -33,7 +33,7 @@ We let R loop from 00 to 99 and define the variables of interest:
 
 The scraped data is first stored in a list and then converted to a dataframe using the plyr package.
 
-```{r, echo=FALSE, message=FALSE}
+```{r, results='hide', message=FALSE}
 for(i in 0:99){
   bribe.links=(paste("http://www.ipaidabribe.com/reports/paid?page=", 0:i, sep = ""))
 }
@@ -83,7 +83,7 @@ df.bribe = ldply(my.bribe.data)
 
 We do some data cleaning to isolate the numeric part in the amount and view variables using *str_exstract*. 
 
-```{r, message=FALSE}
+```{r, results='hide', message=FALSE}
 df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0,0-9,9]+")
 df.bribe$my.link.views = str_extract(df.bribe$my.link.views,"[0,0-9,9]+")
 
@@ -100,7 +100,7 @@ df.bribe$views = as.numeric(df.bribe$views)
 
 More data cleaning is done when we extract the city and the region from the combined variable we got from scraping.
 
-```{r, message=FALSE}
+```{r, results='hide', message=FALSE}
 df.bribe$city1 = str_extract(df.bribe$city,"[A-z]*")
 
 df.bribe$reg = str_extract(df.bribe$city,", [A-z]+ [A-z]+")
@@ -160,7 +160,7 @@ The next graph shows the median amount paid in bribe for each department. Again 
 #plot 2
 p = ggplot(df.bribe.name, aes(x = reorder(name, median_amount), 
                               y = median_amount))
-p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 2: Median amount payed in bribe", x="Department", y="Median amount payed in RS.")
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 2: Median amount paid in bribe", x="Department", y="Median amount payed in RS.")
 plot(p)
 ```
 
@@ -184,6 +184,6 @@ Our last graph shows the median amount paid in bribe across different transactio
 ```{r}
 p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, median_amount), 
                                      y = median_amount))
-p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 5: Median amount payed to bribe", x="Transaction", y="Median amount of bribes in RS.")
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 5: Median amount paid to bribe", x="Transaction", y="Median amount of bribes in RS.")
 plot(p)
 ```
