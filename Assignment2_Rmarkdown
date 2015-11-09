@@ -130,14 +130,14 @@ df.bribe.reg = df.bribe %>%
 df.bribe.name = df.bribe %>%
   group_by(name) %>%
   summarise(antal = sum(antal), median_amount = median(amount), mean_views = mean(views) ) %>%
-  arrange(desc(median_amount), city) %>%
+  arrange(desc(median_amount)) %>%
   data.frame
 
 # stat data for transaction
 df.bribe.transaction = df.bribe %>%
   group_by(transaction) %>%
   summarise(antal = sum(antal), median_amount = median(amount), mean_views = mean(views) ) %>%
-  arrange(desc(median_amount), city) %>%
+  arrange(desc(median_amount)) %>%
   data.frame
 ```
 
