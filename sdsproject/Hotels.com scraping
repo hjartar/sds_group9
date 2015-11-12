@@ -1,0 +1,73 @@
+library("rvest")
+library(stringr)
+library("dplyr")
+
+link = "http://da.hotels.com/search.do?resolved-location=CITY%3A504261%3AUNKNOWN%3AUNKNOWN&destination-id=504261&q-destination=Paris,%20Frankrig&q-localised-check-in=08%2F06%2F2016&q-localised-check-out=09%2F06%2F2016&q-rooms=1&q-room-0-adults=2&q-room-0-children=0"
+
+# PARIS=504261, TOULOUSE=526515, Marseille=510502, Lyon=501534, Saint Eteinne=1636674, Lens=543177
+# Monaco=1640200, Bordeaux=1635224, Nice=494528, Lille=521847
+#control cities in France which are not hosting EURO16: Montpellier=506438, Nantes=510339, Grenoble=505244,
+#Rennes=1634572, Brest=1634547
+# sort by distance, add to link in between children and pn: &sort-order=DISTANCE_FROM_LANDMARK
+
+cities = c("504261", "526515", "510502", "501534", "1636674", "543177", "1640200", "1635224", "494528", "521847",
+           "506438", "510339", "505244", "1634572", "1634547")
+
+#c for cities, d for dates in june, i for pages
+hotels.links = list()
+a = 0
+for(c in cities[1:15]){
+  for(d in 8:12){
+    for(i in 1:3){
+      a = a + 1
+    hotels.links[a]=(paste("http://da.hotels.com/search.do?resolved-location=CITY%3A504261%3AUNKNOWN%3AUNKNOWN&destination-id=", c,"&q-destination=Paris,%20Frankrig&q-localised-check-in=0", d,"%2F06%2F2016&q-localised-check-out=0",d+1,"%2F06%2F2016&q-rooms=1&q-room-0-adults=2&q-room-0-children=0&pn="
+    , i, sep = ""))
+    }
+  }
+}
+head(hotels.links,40)
+
+#antal anmeldelser: .guest-reviews a, rating 1-5: .no-guest-rating .guest-rating-badge , .guest-rating-value strong
+#star rating: .widget-star-rating-overlay, eller .star-rating
+
+scrape_hotels = function(link){
+hotels = read_html(link, encoding = "UTF-8")
+hotels.title = hotels %>% 
+  html_nodes(".has-welcome-rewards a") %>% 
+  html_text()
+hotels.pris = hotels %>%
+  html_nodes("ins") %>% 
+  html_text()
+hotels.afstand = hotels %>%
+  html_nodes(".location-info li:nth-child(1)") %>%
+  html_text()
+hotels.dato = hotels %>%
+  html_nodes(".search-dates") %>%
+  html_text()
+hotels.by = hotels %>%
+  html_nodes("h1") %>%
+  html_text()
+hotels.reviews = hotels %>%
+  html_nodes(".guest-reviews a") %>%
+  html_text()
+hotels.review = hotels %>%
+  html_nodes(".no-guest-rating .guest-rating-badge , .guest-rating-value strong") %>%
+  html_text()
+hotels.rating = hotels %>%
+  html_nodes(".widget-star-rating-overlay") %>%
+  html_text()
+return(cbind(hotels.title, hotels.pris, hotels.afstand, hotels.dato, hotels.by, hotels.reviews, hotels.review, hotels.rating))
+}
+
+#loop igennem 1 til antal_byer*antal datoer*antal_pages
+hotels.data = list() # initialize empty list
+for (i in hotels.links[1:225]){
+  print(paste("processing", i, sep = " "))
+  hotels.data[[i]] = scrape_hotels(i)
+  # waiting one second between hits
+  Sys.sleep(0.1)
+  cat(" done!\n")
+}
+
+library("plyr")
+df.hotels = ldply(hotels.data)
