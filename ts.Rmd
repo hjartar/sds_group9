@@ -1,6 +1,6 @@
 ---
-title: "Assignment2 - Group9"
-author: "Mads Harslund, Lukas Hidan, Rasmus Holm & Hjörtur Hjartar"
+title: "Assignment2Group9"
+author: "Rasmus"
 date: "9 November 2015"
 output: html_document
 ---
@@ -37,10 +37,7 @@ We let R loop from 00 to 1000 with steps of 10 and define the variables of inter
 
 The scraped data is first stored in a list and then converted to a dataframe using the plyr package.
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-```{r, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE}
 #<<<<<<< Updated upstream
 # Loop for pages with step size 10 to get the correct links
 bribe.links=list()
@@ -48,12 +45,6 @@ bribe.links=link
 for(i in seq(10,1000,10)){
   bribe.links[[i]]=(paste(link, i, sep = ""))
 #>>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-```{r, results='hide', message=FALSE}
-for(i in 0:99){
-  bribe.links=(paste("http://www.ipaidabribe.com/reports/paid?page=", 0:i, sep = ""))
->>>>>>> origin/master
 }
 
 # Removing NA's
@@ -93,6 +84,7 @@ for (i in bribe.links[1:100]){
   my.bribe.data[[i]] = scrape_bribe(i)
   # waiting one second between hits
   Sys.sleep(1)
+  cat(" done!\n")
 }
 
 #converting into a data frame
@@ -102,7 +94,7 @@ df.bribe = ldply(my.bribe.data)
 
 We do some data cleaning to isolate the numeric part in the amount and view variables using *str_exstract*. 
 
-```{r, results='hide', message=FALSE}
+```{r, message=FALSE}
 df.bribe$my.link.amount_text = str_extract(df.bribe$my.link.amount_text,"[0,0-9,9]+")
 df.bribe$my.link.views = str_extract(df.bribe$my.link.views,"[0,0-9,9]+")
 
@@ -119,7 +111,7 @@ df.bribe$views = as.numeric(df.bribe$views)
 
 More data cleaning is done when we extract the city and the region from the combined variable we got from scraping.
 
-```{r, results='hide', message=FALSE}
+```{r, message=FALSE}
 df.bribe$city1 = str_extract(df.bribe$city,"[A-z]*")
 
 df.bribe$reg = str_extract(df.bribe$city,", [A-z]+ [A-z]+")
@@ -131,6 +123,7 @@ df.bribe$reg2[is.na(df.bribe$reg)]=df.bribe$reg1[is.na(df.bribe$reg)]
 df.bribe$reg2[is.na(df.bribe$reg2)]=df.bribe$reg[is.na(df.bribe$reg2)]
 df.bribe$reg=df.bribe$reg2
 
+class(df.bribe$amount)
 df.bribe$antal=1
 ```
 
@@ -178,7 +171,7 @@ The next graph shows the median amount paid in bribe for each department. Again 
 #plot 2
 p = ggplot(df.bribe.name, aes(x = reorder(name, median_amount), 
                               y = median_amount))
-p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 2: Median amount paid in bribe", x="Department", y="Median amount payed in RS.")
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 2: Median amount payed in bribe", x="Department", y="Median amount payed in RS.")
 plot(p)
 ```
 
@@ -202,6 +195,6 @@ Our last graph shows the median amount paid in bribe across different transactio
 ```{r}
 p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, median_amount), 
                                      y = median_amount))
-p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 5: Median amount paid to bribe", x="Transaction", y="Median amount of bribes in RS.")
+p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 5: Median amount payed to bribe", x="Transaction", y="Median amount of bribes in RS.")
 plot(p)
 ```

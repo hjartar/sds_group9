@@ -37,8 +37,6 @@ We let R loop from 00 to 1000 with steps of 10 and define the variables of inter
 
 The scraped data is first stored in a list and then converted to a dataframe using the plyr package.
 
-<<<<<<< Updated upstream
-=======
 <<<<<<< HEAD
 ```{r, message=FALSE, warning=FALSE}
 #<<<<<<< Updated upstream
@@ -49,7 +47,6 @@ for(i in seq(10,1000,10)){
   bribe.links[[i]]=(paste(link, i, sep = ""))
 #>>>>>>> Stashed changes
 =======
->>>>>>> Stashed changes
 ```{r, results='hide', message=FALSE}
 for(i in 0:99){
   bribe.links=(paste("http://www.ipaidabribe.com/reports/paid?page=", 0:i, sep = ""))
@@ -205,3 +202,5 @@ p = ggplot(df.bribe.transaction, aes(x = reorder(transaction, median_amount),
 p = p + geom_bar(stat = "identity") + coord_flip() + labs(title="Graph 5: Median amount paid to bribe", x="Transaction", y="Median amount of bribes in RS.")
 plot(p)
 ```
+
+We see that the most frequently reported bribe type concern birth certificates. The taker of bribes regarding birth certificates are typically municipal services, making them the most represented authority to take bribes. One reason for this might be low standards of governance or monitoring at lower governmental levels. The low standards are probably widespread across public services and institutions, but we can see that municpalities are most frequent. This may be due to the low size of the birth certificate bribes, meaning that they are cheap and therefore accesible to the general public. On the other hand we have more expensive bribe types being more infrequent but larger in size. These mainly concern property and are given to he department of Commercial Tax, Sales Tax, VAT. The giver of these bribes might be wealthy individuals or business that own property, argueably to avoid tax issues.
