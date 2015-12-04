@@ -6,7 +6,7 @@ library("dplyr")
 #---------------------------------------------------------------------------------
 
 #Generating links to loop through all movies "based-on-novel".
-for(i in 0:3){
+for(i in 0:611){
   imdb.links=(paste("http://www.imdb.com/search/keyword?keywords=based-on-novel&sort=moviemeter,asc&mode=detail&page=", 0:i, sep = "","&ref_=kw_nxt"))
 }
 head(imdb.links)
@@ -23,7 +23,7 @@ getlinks_imdb = function(link){
 
 #Loop data to a list
 my.imdb.linkdata = list() # initialize empty list
-for (i in imdb.links[1:100]){
+for (i in imdb.links[1:611]){
   print(paste("processing", i, sep = " "))
   my.imdb.linkdata[[i]] = getlinks_imdb(i)
   # waiting one second between hits
@@ -72,7 +72,7 @@ scrape_imdb = function(link2){
 
 #Loop data to a list
 my.imdb.data = list() # initialize empty list
-for (i in imdb.secondary.links[1:100]){
+for (i in imdb.secondary.links[1:30536]){
   print(paste("processing", i, sep = " "))
   my.imdb.data[[i]] = scrape_imdb(i)
   # waiting one second between hits
