@@ -6,8 +6,8 @@ library("dplyr")
 #---------------------------------------------------------------------------------
 
 #Generating links to loop through all movies "based-on-novel".
-for(i in 0:611){
-  imdb.links=(paste("http://www.imdb.com/search/keyword?keywords=based-on-novel&sort=moviemeter,asc&mode=detail&page=", 0:i, sep = "","&ref_=kw_nxt"))
+for(i in 0:437){
+  imdb.links=(paste("http://www.imdb.com/search/keyword?keywords=based-on-novel&mode=detail&page=", 0:i, sep = "","&ref_=kw_nxt&sort=moviemeter,asc&title_type=movie"))
 }
 head(imdb.links)
 
@@ -18,12 +18,12 @@ getlinks_imdb = function(link){
   my.link.link = my.link %>% 
     html_nodes(".lister-item-header a") %>% 
     html_attr("href")
-    return(cbind(my.link.link))
+  return(cbind(my.link.link))
 }
 
 #Loop data to a list
 my.imdb.linkdata = list() # initialize empty list
-for (i in imdb.links[1:611]){
+for (i in imdb.links[1:437]){
   print(paste("processing", i, sep = " "))
   my.imdb.linkdata[[i]] = getlinks_imdb(i)
   # waiting one second between hits
@@ -72,7 +72,7 @@ scrape_imdb = function(link2){
 
 #Loop data to a list
 my.imdb.data = list() # initialize empty list
-for (i in imdb.secondary.links[1:30536]){
+for (i in imdb.secondary.links[1:21822]){
   print(paste("processing", i, sep = " "))
   my.imdb.data[[i]] = scrape_imdb(i)
   # waiting one second between hits
@@ -107,13 +107,9 @@ df.imdb.clean$imdb.metascore = as.numeric(df.imdb.clean$imdb.metascore) #Convert
 df.imdb.clean$imdb.metascore = df.imdb.clean$imdb.metascore/10 #Divide by 10 to get at number on the same scale as imdb ratings.
 
 
-#filter on runtime, to get rid of TV-shows (Assuming TV-shows are no longer than 65 minutes and relevant movies are longer than 65 minutes - Think about possible improvements for this)
-df.imdb.clean = filter(df.imdb.clean, df.imdb.clean$imdb.runtime > 65)
-
 class(df.imdb.clean$imdb.numberofratings)
 
 #Remove NA's (And thus hopefully removing TV-series)
-df.imdb.clean=na.omit(df.imdb.clean) #THINK ABOUT POSSIBLE PROBLEMS WITH THIS
 
 #Removing irrelevant variables:
 df.imdb.clean = subset(df.imdb.clean, select = -.id) # .id-string
@@ -128,7 +124,7 @@ df.imdb.clean=select(df.imdb.clean, -imdb.title)
 #---------------------------------------------------------------------------------
 
 #CLEANING GOODREAD DATA
-df.book.clean = df.book
+df.book.clean <- df.book
 
 #Changing variable names to something more simple
 df.book.clean$title=df.book.clean$my.link.title
@@ -157,20 +153,19 @@ df.book.clean$book.rating=gsub(" avg rating","",df$X1) #Inserting in the df.book
 df$X2= gsub(",","", df$X2) #Cleaning X2 by removing commas
 df.book.clean$books.numberofratings=gsub(" ratings","",df$X2) #Inserting in the df.book.clean data frame
 
+
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
 # Getting rid of duplicates (However: The Hunger Games (The Hunger Games, #1) appear twice due to one ekstra rating in one observation)
 df.book.unique=unique(df.book.clean)
 df.imdb.unique=unique(df.imdb.clean)
-
+#Remove parenthesised comment in title stating order in a book series. 
+df.book.unique$title <- gsub("\\s*\\([^\\)]+\\)","",as.character(df.book.unique$title))
 
 # Merging the two data frames by an inner join on title.
 df.merged=join(df.book.unique, df.imdb.unique,
-     type = "inner")
+               type = "inner")
 
-
-
-
-
+plot( x=df.merged$book.rating, y=df.merged$imdb.rating)
 
