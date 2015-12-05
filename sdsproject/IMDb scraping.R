@@ -3,27 +3,28 @@ library("stringr")
 library("dplyr")
 
 #---------------------------------------------------------------------------------
+#-------SCRAPING OF IMDb DATA-----------------------------------------------------
 #---------------------------------------------------------------------------------
 
 #Generating links to loop through all movies "based-on-novel".
-for(i in 0:437){
-  imdb.links=(paste("http://www.imdb.com/search/keyword?keywords=based-on-novel&mode=detail&page=", 0:i, sep = "","&ref_=kw_nxt&sort=moviemeter,asc&title_type=movie"))
+for(i in 0:414){
+  imdb.links[[1]]=(paste("http://www.imdb.com/search/title?at=0&keywords=based-on-novel&sort=moviemeter&start=", (0:i)*50+1, sep = "","&title_type=feature&year=1900,2015"))
 }
 head(imdb.links)
-
 
 #Function to collect links to every movie on the list
 getlinks_imdb = function(link){
   my.link = read_html(link, encoding = "UTF-8")
   my.link.link = my.link %>% 
-    html_nodes(".lister-item-header a") %>% 
+    html_nodes(".title") %>% 
+    html_node("a") %>% 
     html_attr("href")
   return(cbind(my.link.link))
 }
 
 #Loop data to a list
 my.imdb.linkdata = list() # initialize empty list
-for (i in imdb.links[1:437]){
+for (i in imdb.links[1:414]){
   print(paste("processing", i, sep = " "))
   my.imdb.linkdata[[i]] = getlinks_imdb(i)
   # waiting one second between hits
@@ -41,7 +42,6 @@ head(imdb.secondary.links)
 
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
-
 
 #Function to collect links to every movie on the list
 scrape_imdb = function(link2){
@@ -72,7 +72,7 @@ scrape_imdb = function(link2){
 
 #Loop data to a list
 my.imdb.data = list() # initialize empty list
-for (i in imdb.secondary.links[1:21822]){
+for (i in imdb.secondary.links[1:20665]){
   print(paste("processing", i, sep = " "))
   my.imdb.data[[i]] = scrape_imdb(i)
   # waiting one second between hits
@@ -82,13 +82,59 @@ for (i in imdb.secondary.links[1:21822]){
 
 df.imdb.data = ldply(my.imdb.data)
 
+#---------------------------------------------------------------------------------
+#-------SCRAPING OF GOODREADS DATA-------------------------------------------------
+#---------------------------------------------------------------------------------
+
+link = "https://www.goodreads.com/list/show/2451.I_Saw_the_Movie_Read_the_Book"
+
+for(i in 0:99){
+  book.links=(paste("https://www.goodreads.com/list/show/2451.I_Saw_the_Movie_Read_the_Book?page=", 0:i, sep = ""))
+}
+head(book.links,20)
+
+#func
+scrape_bribe = function(link){
+  my.link = read_html(link, encoding = "UTF-8")
+  my.link.title = my.link %>% 
+    html_nodes(".bookTitle span") %>% 
+    html_text()
+  my.link.ratingtext = my.link %>% 
+    html_nodes(".minirating") %>% 
+    html_text()
+  my.link.authorname = my.link %>% 
+    html_nodes(".authorName span") %>% 
+    html_text()
+  return(cbind( my.link.title, my.link.ratingtext,  my.link.authorname ))
+}
+
+#Loop data to a list
+my.book.data = list() # initialize empty list
+for (i in book.links[1:100]){
+  print(paste("processing", i, sep = " "))
+  my.book.data[[i]] = scrape_bribe(i)
+  # waiting one second between hits
+  Sys.sleep(1)
+  cat(" done!\n")
+}
+
+#converting into a data frame
+library("plyr")
+df.book = ldply(my.book.data)
+
+
+df.book$rating= as.numeric(gsub( " .*$", "", df.book$my.link.ratingtext))
+
+
+
 # END OF SCRAPING
 
+# BEGINNING OF CLEANING
+
 #---------------------------------------------------------------------------------
+#-------CLEANING OF IMDb DATA-----------------------------------------------------
 #---------------------------------------------------------------------------------
 
-# BEGINNING OF CLEANING
-# Cleaning IMDb data
 
 df.imdb.clean=df.imdb.data
 
@@ -136,11 +182,10 @@ df.book.clean=select(df.book.clean, title, book.author, book.rating)
 
 #Splitting rating variable in two - First part gonna be used for rating, second part for numberofratings  
 splitstring=str_split(df.book.clean$book.rating,"—",n=Inf)
-head(splitstring)
-unique(splitstring)
 
+dim(df.book.clean)[1]
 #unlisting splitstring to dataframe
-df <- data.frame(matrix(unlist(splitstring), nrow=1443, byrow=T))
+df <- data.frame(matrix(unlist(splitstring), nrow=dim(df.book.clean)[1], byrow=T))
 
 #Converting X1 and X2 to characters:
 df$X1 <- as.character(df$X1)
@@ -168,4 +213,9 @@ df.merged=join(df.book.unique, df.imdb.unique,
                type = "inner")
 
 plot( x=df.merged$book.rating, y=df.merged$imdb.rating)
+
+
+
+
+
 
