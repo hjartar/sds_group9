@@ -8,7 +8,7 @@ library("dplyr")
 
 #Generating links to loop through all movies "based-on-novel".
 for(i in 0:414){
-  imdb.links[[1]] <- (paste("http://www.imdb.com/search/title?at=0&keywords=based-on-novel&sort=moviemeter&start=", (0:i)*50+1, sep = "","&title_type=feature&year=1900,2015"))
+  imdb.links <- (paste("http://www.imdb.com/search/title?at=0&keywords=based-on-novel&sort=moviemeter&start=", (0:i)*50+1, sep = "","&title_type=feature&year=1900,2015"))
 }
 head(imdb.links)
 
