@@ -212,8 +212,63 @@ df.book.unique$title <- gsub("\\s*\\([^\\)]+\\)","",as.character(df.book.unique$
 df.merged <- join(df.book.unique, df.imdb.unique,
                type = "inner")
 
-plot( x=df.merged$book.rating, y=df.merged$imdb.rating)
+#---------------------------------------------------------------------------------
+#-------PLOT RATINGS-----------------------------------------------------------------
+#---------------------------------------------------------------------------------
 
+# Remove empty observations
+dfplot <- df.merged %>%
+  filter(!is.na(imdb.rating)) %>%
+  filter(!is.na(book.rating))  %>%
+  data.frame
+
+dfplot$imdb.rating <- as.character(dfplot$imdb.rating)
+dfplot$imdb.rating <- as.numeric(dfplot$imdb.rating)
+dfplot$book.rating <- as.numeric(dfplot$book.rating)
+
+
+# Create standadized and naive variables
+dfplot <- mutate(dfplot,
+                 bookstand = (book.rating - mean(book.rating))/sd(book.rating),
+                 moviestand = (imdb.rating - mean(imdb.rating))/sd(imdb.rating),
+                 disstand = bookstand-moviestand,
+                 booknaive = book.rating*2,
+                 disnaive= booknaive-imdb.rating
+)
+
+# Share of books rated better than movies, under naive comparison
+table(sign(dfplot$disnaive))[3]/dim(dfplot)[1]
+#0.8613139 
+
+
+# Share of books rated better than movies, under standardized comparisaon
+table(sign(dfplot$disstand))[2]/dim(dfplot)[1]
+# 0.4835766 
+
+library(ggplot2)
+# Plot of naive comparison: Goodreads rating is multiplied by 2
+naive <- ggplot(dfplot, aes(x=booknaive, y=imdb.rating))
+naive <- naive +  geom_jitter(aes(colour = disnaive))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
+  scale_y_continuous(limits = c(4,10)) + scale_x_continuous(limits = c(4,10)) +
+  scale_colour_gradient(name="Difference in ratings", limits=c(-1, 5), low="blue", high="red")
+naive
+
+ggsave(plot = naive, 
+       file = "~/Desktop/naive.png",
+       height = 6, width = 9)
+
+
+# Plot of standardised comparison: ratings converted to z-scores
+
+stand <- ggplot(dfplot, aes(x=bookstand, y=moviestand))
+stand <- stand +  geom_jitter(aes(colour = disstand))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
+  scale_y_continuous(limits = c(-2.5,2.5)) + scale_x_continuous(limits = c(-2.5,2.5)) +
+  scale_colour_gradient(name="Difference in ratings", limits=c(-3, 4), low="blue", high="red")
+stand
+
+ggsave(plot = stand, 
+       file = "~/Desktop/stand.png",
+       height = 6, width = 9)
 
 
 
