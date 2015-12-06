@@ -35,6 +35,7 @@ for (i in imdb.links[1:414]){
 #converting into a data frame
 library("plyr")
 df.imdb <- ldply(my.imdb.linkdata)
+save(my.imdb.linkdata, file="~/Desktop/my.imdb.linkdata.Rda")
 
 #Creating list of links
 imdb.secondary.links=(paste("http://www.imdb.com", sep = "", df.imdb$my.link.link))
@@ -76,7 +77,7 @@ for (i in imdb.secondary.links[1:20665]){
   print(paste("processing", i, sep = " "))
   my.imdb.data[[i]] <- scrape_imdb(i)
   # waiting one second between hits
-  Sys.sleep(1)
+  Sys.sleep(0.5)
   cat(" done!\n")
 }
 
@@ -223,8 +224,10 @@ dfplot <- df.merged %>%
   data.frame
 
 dfplot$imdb.rating <- as.character(dfplot$imdb.rating)
+
 dfplot$imdb.rating <- as.numeric(dfplot$imdb.rating)
 dfplot$book.rating <- as.numeric(dfplot$book.rating)
+dfplot$books.numberofratings <- as.numeric(dfplot$books.numberofratings)
 
 
 # Create standadized and naive variables
@@ -270,7 +273,20 @@ ggsave(plot = stand,
        file = "~/Desktop/stand.png",
        height = 6, width = 9)
 
+# Compare number of ratings
+
+ratings <- ggplot(dfplot, aes(x=books.numberofratings, y=imdb.numberofratings))
+ratings <- ratings +  geom_jitter(aes(colour = disstand))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
+  scale_x_log10() + scale_y_log10() +
+  scale_colour_gradient(name="Difference in ratings", limits=c(-2.5,2.5), low="blue", high="red")
+ratings
 
 
-
+# Plot the distributions of the naive goodreads and imdb ratings
+df.bell <- select(dfplot, title, imdb.rating, booknaive)
+library("reshape2")
+df.bell <- melt(df.bell, id.var="title")
+melt(DF1, id.var="year", pos = cumsum(value)) 
+bell <- ggplot(df.bell, aes(x = value, group = variable, fill = variable))
+bell + geom_density(alpha=0.5)
 
