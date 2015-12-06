@@ -77,7 +77,7 @@ for (i in imdb.secondary.links[1:20665]){
   print(paste("processing", i, sep = " "))
   my.imdb.data[[i]] <- scrape_imdb(i)
   # waiting one second between hits
-  Sys.sleep(0.5)
+  Sys.sleep(1)
   cat(" done!\n")
 }
 
@@ -231,12 +231,14 @@ dfplot$books.numberofratings <- as.numeric(dfplot$books.numberofratings)
 
 
 # Create standadized and naive variables
+summary(dfplot)
 dfplot <- mutate(dfplot,
                  bookstand = (book.rating - mean(book.rating))/sd(book.rating),
                  moviestand = (imdb.rating - mean(imdb.rating))/sd(imdb.rating),
                  disstand = bookstand-moviestand,
                  booknaive = book.rating*2,
-                 disnaive= booknaive-imdb.rating
+                 disnaive = booknaive-imdb.rating,
+                 disstandsign =sign(dfplot$disstand)
 )
 
 # Share of books rated better than movies, under naive comparison
@@ -267,13 +269,13 @@ olsint <- lm(dfplot$moviestand ~ dfplot$bookstand)$coefficients[1] # Intercept
 # Plot of standardised comparison: ratings converted to z-scores
 
 stand <- ggplot(dfplot, aes(x=bookstand, y=moviestand))
-stand <- stand +  geom_jitter(aes(colour = disstand), alpha=0.5)+ 
+stand <- stand +  geom_jitter(aes(colour = disstandsign), alpha=0.5)+ 
   scale_y_continuous(limits = c(-3,3)) + scale_x_continuous(limits = c(-3,3)) + # remove outliers
-  scale_colour_gradient(name="Difference in ratings", limits=c(-3, 4), low="blue", high="red")+ 
+  scale_colour_gradient(name="Difference in ratings", limits=c(-1, 1), low="blue", high="red")+ 
   stat_smooth(method=lm) + #OLS
-  stat_smooth(method=loess) + #LOESS
-  geom_abline(intercept = 0, slope = 1, linetype = 2, color="black") +#45 degree line
-  geom_abline(intercept = olsint, slope = olsslope, linetype = 1) # ols with outliers
+  #stat_smooth(method=loess) + #LOESS
+  geom_abline(intercept = 0, slope = 1, linetype = 2, color="black") #+#45 degree line
+  #geom_abline(intercept = olsint, slope = olsslope, linetype = 1) # ols with outliers
 stand
 
 ggsave(plot = stand, 
