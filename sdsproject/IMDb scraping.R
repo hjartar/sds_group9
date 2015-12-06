@@ -260,13 +260,20 @@ ggsave(plot = naive,
        file = "~/Desktop/naive.png",
        height = 6, width = 9)
 
+# Linear regression of standardised ratings
+olsslope <- lm(dfplot$moviestand ~ dfplot$bookstand)$coefficients[2] # Slope
+olsint <- lm(dfplot$moviestand ~ dfplot$bookstand)$coefficients[1] # Intercept
 
 # Plot of standardised comparison: ratings converted to z-scores
 
 stand <- ggplot(dfplot, aes(x=bookstand, y=moviestand))
-stand <- stand +  geom_jitter(aes(colour = disstand))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
-  scale_y_continuous(limits = c(-2.5,2.5)) + scale_x_continuous(limits = c(-2.5,2.5)) +
-  scale_colour_gradient(name="Difference in ratings", limits=c(-3, 4), low="blue", high="red")
+stand <- stand +  geom_jitter(aes(colour = disstand), alpha=0.5)+ 
+  scale_y_continuous(limits = c(-3,3)) + scale_x_continuous(limits = c(-3,3)) + # remove outliers
+  scale_colour_gradient(name="Difference in ratings", limits=c(-3, 4), low="blue", high="red")+ 
+  stat_smooth(method=lm) + #OLS
+  stat_smooth(method=loess) + #LOESS
+  geom_abline(intercept = 0, slope = 1, linetype = 2, color="black") +#45 degree line
+  geom_abline(intercept = olsint, slope = olsslope, linetype = 1) # ols with outliers
 stand
 
 ggsave(plot = stand, 
@@ -280,7 +287,6 @@ ratings <- ratings +  geom_jitter(aes(colour = disstand))+ geom_abline(intercept
   scale_x_log10() + scale_y_log10() +
   scale_colour_gradient(name="Difference in ratings", limits=c(-2.5,2.5), low="blue", high="red")
 ratings
-
 
 # Plot the distributions of the naive goodreads and imdb ratings
 df.bell <- select(dfplot, title, imdb.rating, booknaive)
