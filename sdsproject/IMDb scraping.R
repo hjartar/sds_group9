@@ -139,6 +139,9 @@ df.book$rating <- as.numeric(gsub( " .*$", "", df.book$my.link.ratingtext))
 
 df.imdb.clean <- df.imdb.data
 
+#Changing name of the title variable
+df.imdb.clean$title <- df.imdb.clean$imdb.title
+
 #Correcting runtime variable
 df.imdb.clean$imdb.runtime <- gsub(" min","", df.imdb.clean$imdb.runtime) #remove trailing characters
 df.imdb.clean$imdb.runtime <- gsub("(^ +)|( +$)", "", df.imdb.clean$imdb.runtime) #remove trailing blanks
@@ -153,16 +156,18 @@ df.imdb.clean$imdb.metascore <- gsub("/100","", df.imdb.clean$imdb.metascore) #C
 df.imdb.clean$imdb.metascore <- as.numeric(df.imdb.clean$imdb.metascore) #Convert to numeric
 df.imdb.clean$imdb.metascore <- df.imdb.clean$imdb.metascore/10 #Divide by 10 to get at number on the same scale as imdb ratings.
 
+#Remove suffix from sequels
+df.imdb.clean$title <- gsub("- Part \\d","", df.imdb.clean$title) 
+df.imdb.clean$title <- gsub(": Part \\d","", df.imdb.clean$title) 
+df.imdb.clean$title <- gsub(", Part \\d","", df.imdb.clean$title) 
+df.imdb.clean$title <- gsub("- Part [A-z]*","", df.imdb.clean$title) 
+df.imdb.clean$title <- gsub(": Part [A-z]*","", df.imdb.clean$title) 
+
 
 class(df.imdb.clean$imdb.numberofratings)
 
-#Remove NA's (And thus hopefully removing TV-series)
-
 #Removing irrelevant variables:
 df.imdb.clean <- subset(df.imdb.clean, select = -.id) # .id-string
-
-#Changing name of the title variable
-df.imdb.clean$title <- df.imdb.clean$imdb.title
 
 #Selecting only relevant variables
 df.imdb.clean <- select(df.imdb.clean, -imdb.title)
@@ -198,8 +203,7 @@ df.book.clean$book.rating <- gsub(" avg rating","",df$X1) #Inserting in the df.b
 
 df$X2 <- gsub(",","", df$X2) #Cleaning X2 by removing commas
 df.book.clean$books.numberofratings=gsub(" ratings","",df$X2) #Inserting in the df.book.clean data frame
-
-
+summary(dfplot)
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
@@ -230,71 +234,140 @@ dfplot$book.rating <- as.numeric(dfplot$book.rating)
 dfplot$books.numberofratings <- as.numeric(dfplot$books.numberofratings)
 
 
-# Create standadized and naive variables
+# Create standardized and naive variables
+bookshit=2 #Minimum of Goodreads
+imdbshit=1.5 #Minimum of IMDb
+  
+summary(dfplot)
+
 summary(dfplot)
 dfplot <- mutate(dfplot,
-                 bookstand = (book.rating - mean(book.rating))/sd(book.rating),
-                 moviestand = (imdb.rating - mean(imdb.rating))/sd(imdb.rating),
-                 disstand = bookstand-moviestand,
+                 booknorm = (book.rating - bookshit)/(max(book.rating)-bookshit),
+                 movienorm = (imdb.rating - imdbshit)/(max(imdb.rating)-imdbshit),
+                 disnorm= booknorm-movienorm,
                  booknaive = book.rating*2,
-                 disnaive = booknaive-imdb.rating,
-                 disstandsign =sign(dfplot$disstand)
-)
+                 disnaive = booknaive-imdb.rating)
+dfplot <- mutate(dfplot,
+                 disnaivesign  =sign(dfplot$disnaive),
+                 disnormsign =sign(dfplot$disnorm))
+
+dfplot$disnaivesign <- as.factor(dfplot$disnaivesign)
+dfplot$disnormsign <- as.factor(dfplot$disnormsign)
 
 # Share of books rated better than movies, under naive comparison
 table(sign(dfplot$disnaive))[3]/dim(dfplot)[1]
-#0.8613139 
+#0.8929385 
 
 
 # Share of books rated better than movies, under standardized comparisaon
-table(sign(dfplot$disstand))[2]/dim(dfplot)[1]
-# 0.4835766 
+table(sign(dfplot$disnorm))[2]/dim(dfplot)[1]
+# 0.4738041 
 
 library(ggplot2)
 # Plot of naive comparison: Goodreads rating is multiplied by 2
-naive <- ggplot(dfplot, aes(x=booknaive, y=imdb.rating))
-naive <- naive +  geom_jitter(aes(colour = disnaive))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
-  scale_y_continuous(limits = c(4,10)) + scale_x_continuous(limits = c(4,10)) +
-  scale_colour_gradient(name="Difference in ratings", limits=c(-1, 5), low="blue", high="red")
-naive
-
+naive <- ggplot(dfplot, aes(x=booknaive, y=imdb.rating, group=disnaivesign, colour=disnaivesign))
+naive <- naive +  geom_jitter(aes(), alpha=0.5)+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
+  theme(legend.position="bottom") +
+  scale_y_continuous(name = "IMDb Rating" , limits = c(4,10)) + scale_x_continuous(name= "Goodreads rating * 2", limits = c(4,10)) + # remove outliers
+  scale_colour_manual(name ="Difference",
+                    breaks = c(-1,0,1),
+                    labels = c("Movie is better", "Same rating", "Book is better"),
+                    values = c("blue","green", "red"))+ 
+  geom_abline(intercept = 0, slope = 1, linetype = 2, color="black")
+naive 
+table(dfplot$disnaivesign)
 ggsave(plot = naive, 
        file = "~/Desktop/naive.png",
-       height = 6, width = 9)
+       height = 6, width = 6)
 
 # Linear regression of standardised ratings
-olsslope <- lm(dfplot$moviestand ~ dfplot$bookstand)$coefficients[2] # Slope
+olsslope <- lm(dfplot$movienorm~ dfplot$booknorm)$coefficients[2] # Slope
 olsint <- lm(dfplot$moviestand ~ dfplot$bookstand)$coefficients[1] # Intercept
 
-# Plot of standardised comparison: ratings converted to z-scores
+lm(dfplot$movienorm~ dfplot$booknorm)
+t.test(dfplot$movienorm , dfplot$booknorm)
 
-stand <- ggplot(dfplot, aes(x=bookstand, y=moviestand))
-stand <- stand +  geom_jitter(aes(colour = disstandsign), alpha=0.5)+ 
-  scale_y_continuous(limits = c(-3,3)) + scale_x_continuous(limits = c(-3,3)) + # remove outliers
-  scale_colour_gradient(name="Difference in ratings", limits=c(-1, 1), low="blue", high="red")+ 
-  stat_smooth(method=lm) + #OLS
-  #stat_smooth(method=loess) + #LOESS
+# Plot of standardised comparison
+summary(dfplot)
+norm <- ggplot(dfplot, aes(x=booknorm, y=movienorm))
+norm <- norm +  geom_jitter(aes(colour = disnormsign), alpha=0.5)+ 
+  scale_y_continuous(limits = c(0,1.01)) + scale_x_continuous(limits = c(0,1.01)) + # remove outliers
+  stat_smooth(method=lm) + #OLS 
+  theme(legend.position="bottom") +
+  #stat_smooth(method=loess) + #LOESS+
+  scale_colour_manual(name ="Difference",
+                      breaks = c(-1,0,1),
+                      labels = c("Movie is better", "Same rating", "Book is better"),
+                      values = c("blue","green", "red"))+ 
   geom_abline(intercept = 0, slope = 1, linetype = 2, color="black") #+#45 degree line
-  #geom_abline(intercept = olsint, slope = olsslope, linetype = 1) # ols with outliers
-stand
+#geom_abline(intercept = olsint, slope = olsslope, linetype = 1) # ols with outliers
+norm
+ggsave(plot = norm, 
+       file = "~/Desktop/norm.png",
+       height = 6, width = 6)
 
-ggsave(plot = stand, 
-       file = "~/Desktop/stand.png",
-       height = 6, width = 9)
 
 # Compare number of ratings
 
-ratings <- ggplot(dfplot, aes(x=books.numberofratings, y=imdb.numberofratings))
-ratings <- ratings +  geom_jitter(aes(colour = disstand))+ geom_abline(intercept = 0, slope = 1, linetype = 2)+ 
-  scale_x_log10() + scale_y_log10() +
-  scale_colour_gradient(name="Difference in ratings", limits=c(-2.5,2.5), low="blue", high="red")
+ratings <- ggplot(dfplot, aes(y=book.rating, x=books.numberofratings))
+ratings <- ratings +  geom_jitter()+ stat_smooth(method=lm) +  ggtitle("Goodreads ratings versus \nnumber of votes")+
+  scale_x_log10(name="Log of number of votes")  +  scale_y_continuous(name= "Goodreads Rating") 
 ratings
 
+ratings2 <- ggplot(dfplot, aes(y=imdb.rating, x=imdb.numberofratings))
+ratings2 <- ratings2 +  geom_jitter()+ ggtitle("IMDb ratings versus \nnumber of votes")+
+  scale_x_log10(name="Log of number of votes") + stat_smooth(method=lm) +  scale_y_continuous(name= "IMDb Rating") 
+ratings2
+
+ggsave(plot = ratings2, 
+       file = "~/Desktop/ratingsimdb.png",
+       height = 6, width = 8)
+ggsave(plot = ratings, 
+       file = "~/Desktop/ratingsbooks.png",
+       height = 6, width = 8)
 # Plot the distributions of the naive goodreads and imdb ratings
+
+library(readr)
+
+
+#Naive bell curves
+
 df.bell <- select(dfplot, title, imdb.rating, booknaive)
-library("reshape2")
+summary(df.bell)
+
 df.bell <- melt(df.bell, id.var="title")
-melt(DF1, id.var="year", pos = cumsum(value)) 
-bell <- ggplot(df.bell, aes(x = value, group = variable, fill = variable))
+df.bell <- rename(df.bell, c("value"="Rating"))
+
+bell <- ggplot(df.bell, aes(x = Rating, group = variable, fill = variable)) + geom_density(alpha=0.3) +
+  scale_fill_manual(name="Site",values=c("red","blue"), labels=c("IMDb","Goodreads * 2"))+theme(legend.position="bottom")
+bell
+
+
+
+#Normalised bell curves
+df.bell <- select(dfplot, title, movienorm, booknorm)
+df.bell <- melt(df.bell, id.var="title")
+df.bell <- rename(df.bell, c("value"="Rating"))
+
+bell <- ggplot(df.bell, aes(x = Rating, group = variable, fill = variable))  + geom_density(alpha=0.3)+
+  scale_fill_manual(name="Site",values=c("red","blue"), labels=c("IMDb","Goodreads * 2")) +theme(legend.position="bottom")
+bell
+
+ggsave(plot = bell, 
+       file = "~/Desktop/ratingnorm.png",
+       height = 6, width = 6)
+
+bell <- ggplot(dfplot, aes(x = disstand))
 bell + geom_density(alpha=0.5)
+
+
+wilcox.test(dfplot$booknaive,dfplot$imdb.rating, paired=TRUE)
+
+wilcox.test(dfplot$booknorm,dfplot$movienorm, paired=TRUE)
+
+summary(dfplot)
+shapiro.test(dfplot$booknaive)
+shapiro.test(dfplot$imdb.rating)
+
+save(dfplot, file="~/Desktop/dfplot.Rda")
 
